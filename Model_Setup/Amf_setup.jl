@@ -68,13 +68,13 @@ end
 end
 
 mutable struct Results
-    vxj::Array{Float64,8}
-    E_ζ::Array{Float64,7}
-    E_ϵ::Array{Float64,7}
-    pf_v::Array{Float64,7}
-    pf_l::Array{Float64,7}
-    lambda::Array{Float64,8}
-    ϵ_cutoffs::Array{Float64,2}
+    vxj::SharedArray{Float64,8}
+    E_ζ::SharedArray{Float64,7}
+    E_ϵ::SharedArray{Float64,7}
+    pf_v::SharedArray{Float64,7}
+    pf_l::SharedArray{Float64,7}
+    lambda::SharedArray{Float64,8}
+    ϵ_cutoffs::SharedArray{Float64,2}
 end
 
 
@@ -87,16 +87,19 @@ function Initialize(guess::Array{Float64,1})
     #unpack primitives
     @unpack n_n,n_a,n_ad,n_l,n_ξ,n_v,n_h,n_T,n_l = prim
 
-    vxj::Array{Float64, 8}=zeros(n_n,n_a,n_l,n_ξ,n_v,n_h,n_T,n_l).-1000 ##this has n_l next in it too. In reality the i_h stuff doesn't affect v, do can probably drop them later
-    E_ζ::Array{Float64, 7}=zeros(n_n,n_a,n_l,n_ξ,n_v,n_h,n_T) #this is the previous v_bar
-    E_ϵ::Array{Float64, 7}=zeros(n_n,n_a,n_l,n_ξ,n_v,n_h,n_T)
-    pf_v::Array{Float64, 7}=zeros(n_n,n_a,n_l,n_ξ,n_v,n_h,n_T).-1000 ##value function in terms of all the state variables
-    pf_l::Array{Float64, 7}=zeros(n_n,n_a,n_l,n_ξ,n_v,n_h,n_T) ##location decision
-    lambda::Array{Float64,8}=zeros(n_n,n_ad,n_l,n_ξ,n_v,n_h,n_T,n_l)
-    ϵ_cutoffs::Array{Float64,2}=zeros(n_n,n_ad)
+    vxj::SharedArray{Float64, 8}=zeros(n_n,n_a,n_l,n_ξ,n_v,n_h,n_T,n_l).-1000 ##this has n_l next in it too. In reality the i_h stuff doesn't affect v, do can probably drop them later
+    E_ζ::SharedArray{Float64, 7}=zeros(n_n,n_a,n_l,n_ξ,n_v,n_h,n_T) #this is the previous v_bar
+    E_ϵ::SharedArray{Float64, 7}=zeros(n_n,n_a,n_l,n_ξ,n_v,n_h,n_T)
+    pf_v::SharedArray{Float64, 7}=zeros(n_n,n_a,n_l,n_ξ,n_v,n_h,n_T).-1000 ##value function in terms of all the state variables
+    pf_l::SharedArray{Float64, 7}=zeros(n_n,n_a,n_l,n_ξ,n_v,n_h,n_T) ##location decision
+    lambda::SharedArray{Float64,8}=zeros(n_n,n_ad,n_l,n_ξ,n_v,n_h,n_T,n_l)
+    ϵ_cutoffs::SharedArray{Float64,2}=zeros(n_n,n_ad)
 
     res = Results(vxj,E_ζ,E_ϵ,pf_v,pf_l,lambda,ϵ_cutoffs) #initialize value funciton vectors
     prim, est, res #return deliverables
 end
+
+
+
 
 ##why do we need both the results and the initialize?

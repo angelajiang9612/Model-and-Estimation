@@ -28,7 +28,7 @@ function Backwards(prim::Primitives, est::Estimands, res::Results)
     η[η.==0].=-η_d
     ζ= reshape(rand(Gumbel(0, 1), n_n*n_l*n_a),n_n,n_l,n_a) #this type one distribution thing should stay the same, j is ag n_l is location
 
-    for i=1:n_n
+    @sync @distributed for i=1:n_n
         println("this is", i, "person")
         #use the person's actual information, these variables do not change over time
         g=g_d[(i-1)*n_a+1]
@@ -54,7 +54,7 @@ function Backwards(prim::Primitives, est::Estimands, res::Results)
                 end
             elseif a < n_a #in other periods do the migration decision first (drom the back)
                 for i_l = 1:n_l, i_ξ = 1:n_ξ, i_v = 1:n_v, i_h = 1:n_h, i_T = 1:n_T
-                    for i_j=1:n_l #next
+                        for i_j=1:n_l #next
                         if i_l == i_j #no location match shocks
                              #remember to use next period's things, a+1 and next period's shocks (in this case same as this period)
                             e_next=markov_h[i_h,1]*markov_T[i_T,1]*res.E_ϵ[i,a+1,i_j,i_ξ,i_v,1,1] + markov_h[i_h,1]*markov_T[i_T,2]*res.E_ϵ[i,a+1,i_j,i_ξ,i_v,1,2] + markov_h[i_h,2]*markov_T[i_T,1]*res.E_ϵ[i,a+1,i_j,i_ξ,i_v,2,1]
@@ -94,6 +94,16 @@ function Backwards(prim::Primitives, est::Estimands, res::Results)
     return res
 end
 
+
+function probability_lambda() ##function returns probability, the inputs are vxj and v_bar
+    prim=Primitives()
+    @unpack n_l, n_ξ, n_v, n_h, n_T, n_j, n_a, n_ad, n_n,γ =prim #dimensions
+    lambda=zeros(n_n,n_ad,n_l,n_ξ,n_v,n_h,n_T,n_l)
+    for i=1:n_n, a= 1:n_ad,i_l = 1:n_l, i_ξ = 1:n_ξ, i_v = 1:n_v,i_h = 1:n_h,i_T= 1:n_T, i_j= 1:n_j,
+        lambda[i,a,i_l,i_ξ,i_v,i_h,i_T,i_j]=exp(γ+ vxj[i,a,i_l,i_ξ,i_v,i_h,i_T,i_j]-E_ζ[i,a,i_l,i_ξ,i_v,i_h,i_T])
+    end
+    lambda
+end
 
 
 function cutoffs()
