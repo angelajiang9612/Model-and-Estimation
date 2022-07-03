@@ -6,14 +6,6 @@ Author: Modified from GA
 =#
 
 #add more cores!
-#=
-Migration and the Family testing Julia file
-
-Reads in programs, estimates models, and performs counterfactuals while reporting/exporting results
-Author: Modified from GA
-=#
-
-#add more cores!
 
 using Distributed
 addprocs(3)
@@ -62,8 +54,6 @@ l_o
 data_sim=DataFrames.DataFrame(hcat(df_20,vec(l_o'),vec(l_j'),vec(ic'),v_dat,vec(η_dat'),ι_dat,μ_dat),:auto)   ##can also just add stuff at the end
 
 CSV.write("generated.csv", data_sim)
-
-
 
 
 
@@ -146,7 +136,7 @@ pf_l=res.pf_l
 @elapsed probability_lambda(prim::Primitives,res::Results)
 
 
-
+=#
 
 
 
@@ -162,5 +152,3 @@ pf_l=res.pf_l
 data_sim=DataFrames.DataFrame(hcat(data_20,vec(l_o'),vec(l_j'),vec(ic'),v_dat,vec(η_dat'),ι_dat,μ_dat),:auto)   ##can also just add stuff at the end
 
 CSV.write("generated.csv", data_sim)
-
-=#

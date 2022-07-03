@@ -28,3 +28,12 @@ function Readin_loc(dir::String)
     loc= Array{Float64,2}(temp)
     loc
 end
+
+function Readin_data_m(dir::String)
+    temp=CSV.read(
+    "$dir/regenerated.csv",
+    DataFrames.DataFrame;
+    )
+    data_m= Array{Float64,2}(temp)
+    data_m
+end

@@ -7,52 +7,70 @@ Author: Modified from GA
 
 #add more cores!
 
-using Interpolations, Parameters, Distributions, DataFrames, CSV, LinearAlgebra, Statistics, Random, Profile, NLopt, SharedArrays
+using Distributed
+addprocs(3)
 
-include("Amf_readin.jl") #just need to be in the same folder as this document
-include("Amf_setup.jl")
-include("Amf_valfunc.jl")
+@everywhere using Interpolations,Parameters,Distributions,DataFrames,CSV,LinearAlgebra,Statistics,Random,Profile,NLopt,SharedArrays,
+
+@everywhere using Optim
 
 
+optimize
+@everywhere include("Amf_readin.jl") #just need to be in the same folder as this document
+@everywhere include("Amf_setup.jl")
+@everywhere include("Amf_funcs_estimate.jl")
 
-dir = "/Users/bubbles/Desktop/Research /Migration-family ties /Model and Synthetic Data/Synthetic Data/output"
-cd(dir)
+@everywhere dir = "/Users/bubbles/Desktop/Research /Migration-family ties /Model and Synthetic Data/Synthetic Data/output"
+@everywhere cd(dir)
 
 #read in model utilities, estimation sample, etc.
-data = Readin_ind(dir)
-df_20 = Readin_ind_20(dir)
-locdata = Readin_loc(dir)
+@everywhere data = Readin_ind(dir)
+@everywhere df_20 = Readin_ind_20(dir)
+@everywhere locdata = Readin_loc(dir)
+@everywhere data_m =Readin_data_m(dir)
 
+##how can we have an objective function that is in terms of more than just the parameters
+#objective function to minimize
+@everywhere function Objective_function(g::Array{Float64,1})
+    obj = 0.0 #preallocation of objective function value
+    println("Current Guess")
+    println(round.(g, digits = 4)) ##print the guess g
 
-function Test_Value(guess::Array{Float64,1}, data::Array{Float64,2}, locdata::Array{Float64,2})
-    prim, est, res = Initialize(guess) #initialize primitives, estimands, and results vectors
+    prim, est, res = Initialize(g) #initialize primitives, estimands, and results vectors
     Backwards(prim, est, res) #compute all value functions
+    likelihood = Likelihood(prim, est, res, data_m, locdata)
+    obj = -1*likelihood
+
+    #garbage collection
+    finalize(res.vxj)
+    finalize(res.E_ζ)
+    finalize(res.E_ϵ)
+    @everywhere GC.gc()
+
+    #report how we're doing
+    println("")
+    #println("Current Guess")
+    #println(round.(g, digits = 4))
+    println("Current error: ", round(obj, digits = 4))
+    println("")
+    obj #return deliverable
 end
 
 
 initial=[0.00002,0.03,0.01,0.01,0.01,0.08,0.02,0.07,0.03,0.06,0.05,10000,0.1,0.5,100]
 
-
-@elapsed Test_Value(initial,data,locdata)
-
-vxj=res.vxj
-E_ζ=res.E_ζ
-pf_l=res.pf_l
+x1 =initial.+0.001
 
 
-lambda=probability_lambda()
+@elapsed obj=Objective_function(initial)
+#some guess
 
-ϵ_cutoffs=cutoffs()
+result = Optim.optimize(Objective_function, x1, autodiff = :forward, g_tol = 10)
 
-l_j, l_o, ic=solve_forward()
 
-v_dat,η_dat,ι_dat,μ_dat= misc()
-
-l_o
-
-data_sim=DataFrames.DataFrame(hcat(df_20,vec(l_o'),vec(l_j'),vec(ic'),v_dat,vec(η_dat'),ι_dat,μ_dat),:auto)   ##can also just add stuff at the end
-
-CSV.write("generated.csv", data_sim)
+mini = Optim.minimizer(result)
+print(mini)
+writedlm("mini.txt", mini)
 
 
 
@@ -60,93 +78,26 @@ CSV.write("generated.csv", data_sim)
 
 
 
-
-
-
-
-##junk##
-
-#how to use res?
-##
-
-function probability_lambda() ##function returns probability, the inputs are vxj and v_bar
-    prim=Primitives()
-    res=Results(vxj,E_ζ)
-    @unpack n_l, n_ξ, n_v, n_h, n_T, n_j, n_a, n_ad, n_n,γ =prim #dimensions
-    @unpack lambda,vxj,E_ζ = res
-
-    #lambda=zeros(n_n,n_ad,n_l,n_ξ,n_v,n_h,n_T,n_l)
-    for i=1:n_n, a= 1:n_ad,i_l = 1:n_l, i_ξ = 1:n_ξ, i_v = 1:n_v,i_h = 1:n_h,i_T= 1:n_T, i_j= 1:n_j,
-        res.lambda[i,a,i_l,i_ξ,i_v,i_h,i_T,i_j]=exp(γ+ res.vxj[i,a,i_l,i_ξ,i_v,i_h,i_T,i_j]-res.E_ζ[i,a,i_l,i_ξ,i_v,i_h,i_T])
-    end
-end
-
-probability_lambda()
-
-
-
-##how to use the result from res?
-
-
-    #testing function that lets us avoid holding huge matrices in memory (not sure what this means)
-function Test_Value(guess::Array{Float64,1}, data::Array{Float64,2}, locdata::Array{Float64,2})
+function Test_Value2(
+    guess::Array{Float64,1},
+    data::Array{Float64,2},
+    locdata::Array{Float64,2},
+)
     prim, est, res = Initialize(guess) #initialize primitives, estimands, and results vectors
-    res=Backwards(prim, est, res) #compute all value functions
-    probability_lambda(prim,res)
-    cutoffs(prim,est,res)
+    Backwards(prim, est, res) #compute all value functions
 end
 
 
+@elapsed Test_Value2(initial, data, locdata)
 
-function probability(prim::Primitives,res::Results)
-    prim=Primitives()
-    res=Results()
-    probability_lambda(prim,res)
+
+function Test_Value(
+    guess::Array{Float64,1},
+    data::Array{Float64,2},
+    locdata::Array{Float64,2},
+)
+    prim, est, res = Initialize(guess) #initialize primitives, estimands, and results vectors
+    Backwards(prim, est, res) #compute all value functions
+    probability = probability_lambda2(prim, res)
+    return probability
 end
-
-@elapsed probability(initial,data,locdata)
-
-
-
-
-res.lambda
-
-function probability_lambda(prim::Primitives,res::Results) ##function returns probability, the inputs are vxj and v_bar
-    @unpack n_l, n_ξ, n_v, n_h, n_T, n_j, n_a, n_ad, n_n,γ =prim #dimensions
-    @unpack lambda,vxj,E_ζ = res
-    for i=1:n_n, a= 1:n_ad,i_l = 1:n_l, i_ξ = 1:n_ξ, i_v = 1:n_v,i_h = 1:n_h,i_T= 1:n_T, i_j= 1:n_j,
-        res.lambda[i,a,i_l,i_ξ,i_v,i_h,i_T,i_j]=exp(γ+ res.vxj[i,a,i_l,i_ξ,i_v,i_h,i_T,i_j]-E_ζ[i,a,i_l,i_ξ,i_v,i_h,i_T])
-    end
-end
-
-@elapsed Test_Value(initial,data,locdata) ##
-
-@elapsed probability(initial,data,locdata) ##
-
-
-
-
-res.ϵ_cutoffs
-
-vxj=res.vxj
-pf_l=res.pf_l
-
-@elapsed probability_lambda(prim::Primitives,res::Results)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-data_sim=DataFrames.DataFrame(hcat(data_20,vec(l_o'),vec(l_j'),vec(ic'),v_dat,vec(η_dat'),ι_dat,μ_dat),:auto)   ##can also just add stuff at the end
-
-CSV.write("generated.csv", data_sim)
