@@ -1,5 +1,5 @@
 ###########Code to initialize model primitives and estimands and compute value functions and other useful things
-
+##blah
 #structure to house model primitives
 @with_kw struct Primitives
 
@@ -46,7 +46,7 @@
 end
 
 #structure containing model estimands
-@with_kw mutable struct Estimands
+@with_kw mutable struct Estimands ##mutable structure with starting value allowed
     guess::Vector{Float64} = zeros(16)
 
     α0::Float64 =0.00002
@@ -82,7 +82,7 @@ end
 #Initialize model primitives
 function Initialize(guess::Array{Float64,1})
     prim = Primitives() #initialize model primitives
-    est = Estimands(guess=guess) #could have different guesses, then guess is replaced by this one, changing here probably will not require restart julia
+    est = Estimands(guess=guess) #could have different guesses, then guess is replaced by this one, changing here probably will not require restart julia, because this is a mutable structure
 
     #unpack primitives
     @unpack n_n,n_a,n_ad,n_l,n_ξ,n_v,n_h,n_T,n_l = prim

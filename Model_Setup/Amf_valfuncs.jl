@@ -1,7 +1,7 @@
 #this is now a bit messy can probably get it to just compute vxj
 #2880 states (including age) for each person
-function Backwards(prim::Primitives, est::Estimands, res::Results)
-    @unpack β0, β1, β2, β3, β4, β, γ=prim
+function Backwards(prim::Primitives, est::Estimands, res::Results) #instead of doing this can just do prim=Primitives(), but this is only possible after initialize has already been completed, otherwise will est and res are not really defined.
+    @unpack β0, β1, β2, β3, β4, β, γ=prim #alternatively can just use prim.β0
     @unpack v_grid, η_grid, l_grid, ξ_grid, h_grid, T_grid, a_grid = prim #grids
     @unpack n_η, n_l, n_ξ, n_v, n_h, n_T, n_j, n_a, n_ad, n_n =prim #dimensions
     @unpack markov_h, markov_T =prim

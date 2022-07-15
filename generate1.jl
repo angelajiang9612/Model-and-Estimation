@@ -18,15 +18,21 @@ using Random
 
 ##data
 
-cd("/Users/bubbles/Desktop/Research /Migration-family ties /Model/Synthetic Data")
+cd("/Users/bubbles/Desktop/Research /Migration-family ties /Model and Synthetic Data/Synthetic Data/output")
 
 data=CSV.File("mydata.csv")
 df = DataFrames.DataFrame(data) ##must define Dataframe.DataFrame or does not work
 data=Matrix(df)
 
+
 loc_data=CSV.File("locdata.csv")
 dfloc = DataFrames.DataFrame(loc_data)
 locdata=Matrix(dfloc)
+
+
+locdata=SharedArray{Float64, 2}(locdata)
+
+
 
 id_d=Integer.(data[:,1])
 t_d=Integer.(data[:,2])
@@ -42,7 +48,6 @@ G_d=data[:,11]
 T_d=Integer.(data[:,12])
 
 
-
 ##parameters estimated out of model
 
 β0=10000
@@ -51,7 +56,7 @@ T_d=Integer.(data[:,12])
 β3=30000
 β4=0
 
-locations=Integer.(locdata[:,1])
+locations=Integer.(locdata[:,1]) ##just put this into the value function
 μ=locdata[:,2] #mean wages normalise
 c=locdata[:,3] #costs
 N=locdata[:,5] #population
@@ -60,11 +65,9 @@ hc=locdata[:,4] #care cost
 
 #grids
 
-markov=[0.9 0.09 0.01; 0.05 0.90 0.05; 0 0 1 ] #healthy, sick and dead transition matrix
-v_grid =[0.5 -0.5]
-ξ_grid =[0.5 -0.5]
-h_grid=[1,2,3]
-T_grid=[0,1]
+markov_h=[0.9 0.09 0.01; 0.05 0.90 0.05; 0 0 1] #healthy, sick and dead transition matrix
+markov_T=[0.9 0.1; 0.1 0.9]
+
 
 ##numbers that do not change
 n_n=1000
@@ -165,7 +168,7 @@ function Backwards()
             Δ=γ0 + γ1*age #right now the moving cost is not location specific
             if a == n_a #no location decision in this period, so no location related stuff this period
                 for i_l = 1:n_l, i_ξ = 1:n_ξ, i_v = 1:n_v, i_h = 1:n_h, i_T = 1:n_T #for any current state variables
-                    wages= μ[i_l] + v_grid[i_v]+ G + η[i] + ι[i,i_l,a]
+                    wages= μ[i_l] + v_grid[i_v]+ G + η[i]
                     kappa= θ1*g + θ2*(1-sib) + θ3*low + θ4*hc[lp] - θ5*T_grid[i_T] - cost
                     u_l0= α0*wages/c[i_l] + α1*N[i_l] + αp*(i_l==lp) + (h_grid[i_h]==2)*kappa + ξ_grid[i_ξ]
                     if i_l != lp || (i_l == lp && i_h!=2)
@@ -217,15 +220,14 @@ function Backwards()
 end
 
 
-@elapsed vxj, E_ζ, E_ϵ, pf_v, pf_l = Backwards()
-
+timer = @elapsed vxj, E_ζ, E_ϵ, pf_v, pf_l = Backwards()
+timer
 
 ##to calculate everything else just need df_20, the data df
 
 
 df_20=filter(row -> row.t <1989, df)
 data_20=Matrix(df_20)
-
 id_d20=Integer.(data_20[:,1])
 t_d20=Integer.(data_20[:,2])
 age_d20=Integer.(data_20[:,3])

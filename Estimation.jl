@@ -10,7 +10,7 @@ using Optim
 
 ##the initial parameters
 
-cd("/Users/bubbles/Desktop/Research /Migration-family ties /Model/Synthetic Data/Data")
+cd("/Users/bubbles/Desktop/Research /Migration-family ties /Model and Synthetic Data/Synthetic Data/output")
 loc_data=CSV.File("locdata.csv")
 dfloc = DataFrames.DataFrame(loc_data)
 locdata=Matrix(dfloc)
@@ -20,7 +20,7 @@ df = DataFrames.DataFrame(data) ##must define Dataframe.DataFrame or does not wo
 data=Matrix(df)
 
 
-data_m=CSV.File("regenerated.csv") #the simulated data
+#data_m=CSV.File("regenerated.csv") #the simulated data
 df_m = DataFrames.DataFrame(data_m) ##must define Dataframe.DataFrame or does not work
 data_m=Matrix(df_m)
 
@@ -124,8 +124,6 @@ T_grid=[0,1]
 v_grid =[-v_d_in v_d_in]
 ξ_grid =[-ξ_d_in ξ_d_in]
 η_grid =[-η_d_in η_d_in]
-
-
 
 ##the shocks that can be drawn outside, does not depend on the parameter estimates
 
@@ -342,21 +340,29 @@ function llikelihood(x)
 end
 
 
-x1=x0.+0.2 ##start from not the input
+x1=[0.00001,0.02,0.015,0.02,0.05,0.06,0.01,0.05,0.02,0.05,0.3,8000,0.2,11000,90,0.02]
 
-res0=llikelihood(x0)
-res1=llikelihood(x1)
+
+result=optimize(llikelihood, x1, iterations=2)
+
+
+
+
+
+#res0=llikelihood(x0)
+#res1=llikelihood(x1)
 
 
 x0=[α0_in,α1_in,αp_in,γ0_in,γ1_in,θ1_in,θ2_in,θ3_in,θ4_in,θ5_in,σ_ϵ_in,v_d_in,ξ_d_in,η_d_in,σ_ι_in,cost_in]
 
+x0=[0.00002,0.03,0.01,0.01,0.01,0.08,0.02,0.07,0.03,0.06,0.5,10000,0.1,10000,100,0.05]
 
-x1=[0.00001,0.02,0.015,0.02,0.05,0.06,0.01,0.05,0.02,0.05,0.3,8000,0.2,11000,90,0.02]
 
+diff=x1-x0
 #@elapsed testres=llikelihood(x0)
 #@show testres
 
-result=optimize(llikelihood, x1, g_tol =10)
+
 
 minimum=Optim.minimizer(result)
 print(minimum)

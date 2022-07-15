@@ -1,7 +1,7 @@
 #=
 Migration and the Family testing Julia file
 
-Reads in programs, estimates models, and performs counterfactuals while reporting/exporting results
+Reads in programs, generate data for estimation
 Author: Modified from GA
 =#
 
@@ -14,7 +14,7 @@ addprocs(3)
 
 @everywhere include("Amf_readin.jl") #just need to be in the same folder as this document
 @everywhere include("Amf_setup.jl")
-@everywhere include("Amf_valfunc.jl")
+@everywhere include("Amf_valfuncs.jl")
 
 @everywhere dir = "/Users/bubbles/Desktop/Research /Migration-family ties /Model and Synthetic Data/Synthetic Data/output"
 @everywhere cd(dir)
@@ -32,7 +32,7 @@ addprocs(3)
 end
 
 
-initial=[0.00002,0.03,0.01,0.01,0.01,0.08,0.02,0.07,0.03,0.06,0.05,10000,0.1,0.5,100]
+initial=[0.00002,0.03,0.01,0.01,0.01,0.08,0.02,0.07,0.03,0.06,0.05,10000,10000,0.1,0.5,100]
 
 
 @elapsed res=Test_Value(initial,data,locdata)
@@ -48,9 +48,10 @@ pf_l=res.pf_l
 
 l_j, l_o, ic=solve_forward()
 
+
 v_dat,η_dat,ι_dat,μ_dat= misc()
 
-l_o
+
 data_sim=DataFrames.DataFrame(hcat(df_20,vec(l_o'),vec(l_j'),vec(ic'),v_dat,vec(η_dat'),ι_dat,μ_dat),:auto)   ##can also just add stuff at the end
 
 CSV.write("generated.csv", data_sim)
